@@ -3,7 +3,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Union
 
-from  model import Base, Categoria
+from model.base import Base
+from model.categoria import Categoria
 
 class Despesa(Base):
     __tablename__ = 'despesa'

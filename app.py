@@ -127,3 +127,78 @@ def del_despesa(query: DespesaBuscaSchema):
         logger.warning(f"Erro ao deletar produto #'{despesa_descricao}', {error_msg}")
         return {"mesage": error_msg}, 404
 
+@app.post('/receita', tags=[receita_tag],
+          responses={})
+def add_receita(form: ReceitaSchema):
+    """Adiciona uma nova Receita à base de dados
+
+    Retorna uma representação das receitas e comentários associados.
+    """
+    receita = Receita(
+        descricao=form.descricao,
+        valor=form.valor
+    )
+    try:
+        # criando conexão com a base
+        session = Session()
+        # adicionando receita
+        session.add(receita)
+        # efetivando o camando de adição de novo item na tabela
+        session.commit()
+        logger.debug(f"Adicionando receita de descricao: '{receita.descricao}'")
+        return apresenta_receitas(receita), 200
+
+    except Exception as e:
+        # caso um erro fora do previsto
+        error_msg = "Não foi possível salvar novo item :/"
+        logger.warning(f"Erro ao adicionar produto '{receita.descricao}', {error_msg}")
+        return {"mesage": error_msg}, 400
+    
+@app.get('/receita', tags=[receita_tag],
+          responses={})
+def get_receitas():
+    """Faz a busca por todos os Produto cadastrados
+
+    Retorna uma representação da listagem de produtos.
+    """
+    logger.debug(f"Coletando receitas")
+    # criando conexão com a base
+    session = Session()
+    # fazendo a busca
+    receitas = session.query(Receita).all()
+
+    if not receitas:
+        # se não há receitas cadastrados
+        return {"receitas": []}, 200
+    else:
+        logger.debug(f"%d rodutos econtrados" % len(receitas))
+        # retorna a representação de receita
+        print(receitas)
+        return apresenta_receitas(receitas), 200
+    
+@app.delete('/receita', tags=[receita_tag],
+          responses={})
+def del_receita(query: ReceitaBuscaSchema):
+    """Deleta um Produto a partir do nome de produto informado
+
+    Retorna uma mensagem de confirmação da remoção.
+    """
+    receita_descricao = unquote(unquote(query.descricao))
+    print(receita_descricao)
+    logger.debug(f"Deletando dados sobre produto #{receita_descricao}")
+    # criando conexão com a base
+    session = Session()
+    # fazendo a remoção
+    count = session.query(Receita).filter(Receita.descricao == receita_descricao).delete()
+    session.commit()
+
+    if count:
+        # retorna a representação da mensagem de confirmação
+        logger.debug(f"Deletado produto #{receita_descricao}")
+        return {"mesage": "Produto removido", "id": receita_descricao}
+    else:
+        # se o produto não foi encontrado
+        error_msg = "Produto não encontrado na base :/"
+        logger.warning(f"Erro ao deletar produto #'{receita_descricao}', {error_msg}")
+        return {"mesage": error_msg}, 404
+

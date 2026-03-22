@@ -1,0 +1,5 @@
+.env
+meu-env*
+__pycache__/
+database/
+log/

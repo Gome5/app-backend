@@ -41,16 +41,3 @@ class ProdutoDelSchema(BaseModel):
     """
     mesage: str
     nome: str
-
-def apresenta_produto(produto: Produto):
-    """ Retorna uma representação do produto seguindo o schema definido em
-        ProdutoViewSchema.
-    """
-    return {
-        "id": produto.id,
-        "nome": produto.nome,
-        "quantidade": produto.quantidade,
-        "valor": produto.valor,
-        "total_cometarios": len(produto.comentarios),
-        "comentarios": [{"texto": c.texto} for c in produto.comentarios]
-    }
