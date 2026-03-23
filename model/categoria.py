@@ -7,11 +7,9 @@ class Categoria(Base):
     __tablename__ = 'categoria'
 
     id = Column(Integer, primary_key=True)
-    nome = Column(String(50), unique=True)
+    nome = Column(String(50), unique=True, nullable=False)
 
-    despesa = Column(Integer, ForeignKey("despesa.pk_despesa"), nullable=False)
-
-    def __init__(self, nome:str):
+    def __init__(self, nome: str):
         """
         Cria uma categoria de gasto
 

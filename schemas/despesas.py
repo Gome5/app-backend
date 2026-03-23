@@ -11,9 +11,9 @@ class DespesaSchema(BaseModel):
 
 class DespesaBuscaSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
-        feita apenas com base no nome do produto.
+        feita apenas com base na descrição da despesa.
     """
-    descricao: str = "Teste"
+    descricao: str = "Compra no Shopping"
 
 
 class ListagemDespesaSchema(BaseModel):
@@ -35,9 +35,27 @@ def apresenta_despesas(despesas: List[Despesa]):
 
     return {"despesas": result}
 
-class ProdutoDelSchema(BaseModel):
+
+def apresenta_despesa(despesa: Despesa):
+    """ Retorna uma representação da despesa seguindo o schema definido em
+        DespesaViewSchema.
+    """
+    return {
+        "id": despesa.id,
+        "descricao": despesa.descricao,
+        "valor": despesa.valor,
+    }
+
+class DespesaDelSchema(BaseModel):
     """ Define como deve ser a estrutura do dado retornado após uma requisição
         de remoção.
     """
-    mesage: str
-    nome: str
+    message: str
+    descricao: str
+
+class DespesaViewSchema(BaseModel):
+    """ Define como uma despesa será retornado: despesa + categoria.
+    """
+    id: int = 1
+    descricao: str = "Compra no Shopping"
+    valor: float = 125.50

@@ -28,6 +28,17 @@ def apresenta_receitas(receitas: List[Receita]):
         result.append({
             "descricao": receita.descricao,
             "valor": receita.valor,
+            "data de entrada": receita.data_entrada.strftime("%d/%m/%Y")
         })
 
     return {"receitas": result}
+
+def apresenta_receita(receita: Receita):
+    """ Retorna uma representação da receita seguindo o schema definido em
+        ReceitaViewSchema.
+    """
+    return {
+        "id": receita.id,
+        "descricao": receita.descricao,
+        "valor": receita.valor,
+    }
