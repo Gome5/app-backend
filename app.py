@@ -15,8 +15,7 @@ CORS(app)
 
 # definindo tags
 home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
-comentario_tag = Tag(name="Comentario", description="Adição de um comentário à um produtos cadastrado na base")
-receita_tag = Tag(name="Receita", description="Adição, visualização e remoção de produtos à base")
+receita_tag = Tag(name="Receita", description="Adição, visualização e remoção de receitas à base")
 despesa_tag = Tag(name="Despesa", description="Adição, visualização e remoção de despesas à base")
 categoria_tag = Tag(name="Categoria", description="Adição, visualização e remoção de categorias à base")
 
@@ -54,7 +53,7 @@ def add_despesa(form: DespesaSchema):
         logger.warning(f"Erro ao adicionar despesa '{despesa.descricao}', {error_msg}")
         return {"message": error_msg}, 400
 
-@app.get('/despesa', tags=[despesa_tag],
+@app.get('/despesas', tags=[despesa_tag],
           responses={"200": ListagemDespesaSchema, "404": ErrorSchema})
 def get_despesas():
     """Faz a busca por todas as despesas cadastradas
@@ -76,27 +75,72 @@ def get_despesas():
         print(despesas)
         return apresenta_despesas(despesas), 200
     
+@app.get('/despesa', tags=[despesa_tag],
+         responses={"200": DespesaViewSchema, "404": ErrorSchema})
+def get_despesa(query: DespesaBuscaSchema):
+    """Faz a busca por uma Despesa a partir da descrição da despesa ou do id
+
+    Retorna uma representação da despesa.
+    """
+    if not query.descricao and not query.id:
+        error_msg = "É necessário informar ao menos um parâmetro de busca :/"
+        logger.warning(f"Erro ao deletar despesa, {error_msg}")
+        return {"message": error_msg}, 400
+    despesa_descricao = unquote(unquote(query.descricao)) if query.descricao else None
+    despesa_id = query.id
+    print(despesa_descricao)
+    logger.debug(f"Coletando dados sobre despesa #{despesa_descricao}")
+    # criando conexão com a base
+    session = Session()
+    # fazendo a busca
+    if despesa_id is not None:
+        despesa = session.query(Despesa).filter(Despesa.id == despesa_id).first()
+    elif despesa_descricao:
+        despesa = session.query(Despesa).filter(Despesa.descricao == despesa_descricao).first()
+
+    if despesa:
+        logger.debug(f"Despesa encontrada: '{despesa.descricao}'")
+        # retorna a representação de despesa
+        return apresenta_despesa(despesa), 200
+    else:
+        # se a despesa não foi encontrada
+        error_msg = "Despesa não encontrada na base :/"
+        logger.warning(f"Erro ao buscar despesa #'{despesa_descricao}', {error_msg}")
+        return {"message": error_msg}, 404
+    
 
 @app.delete('/despesa', tags=[despesa_tag],
           responses={"200": DespesaDelSchema, "404": ErrorSchema})
 def del_despesa(query: DespesaBuscaSchema):
-    """Deleta uma despesa a partir da descrição informada
+    """Deleta uma despesa a partir da descrição ou do id informado
 
     Retorna uma mensagem de confirmação da remoção.
     """
-    despesa_descricao = unquote(unquote(query.descricao))
+    if not query.descricao and not query.id:
+        error_msg = "É necessário informar ao menos um parâmetro de busca :/"
+        logger.warning(f"Erro ao deletar despesa, {error_msg}")
+        return {"message": error_msg}, 400
+    despesa_descricao = unquote(unquote(query.descricao)) if query.descricao else None
+    despesa_id = query.id
     print(despesa_descricao)
     logger.debug(f"Deletando dados sobre produto #{despesa_descricao}")
     # criando conexão com a base
     session = Session()
     # fazendo a remoção
-    count = session.query(Despesa).filter(Despesa.descricao == despesa_descricao).delete()
+    if despesa_id is not None:
+        count = session.query(Despesa).filter(Despesa.id == despesa_id).delete()
+    elif despesa_descricao:
+        count = session.query(Despesa).filter(Despesa.descricao == despesa_descricao).delete()
     session.commit()
 
     if count:
         # retorna a representação da mensagem de confirmação
-        logger.debug(f"Deletado despesa #{despesa_descricao}")
-        return {"message": "Despesa removida", "descricao": despesa_descricao}
+        if despesa_id is not None:
+            logger.debug(f"Deletado despesa #{despesa_id}")
+            return {"message": "Despesa removida", "id": despesa_id}
+        if despesa_descricao is not None and despesa_id is None:
+            logger.debug(f"Deletado despesa #{despesa_descricao}")
+            return {"message": "Despesa removida", "descricao": despesa_descricao}
     else:
         # se a despesa não foi encontrada
         error_msg = "Despesa não encontrada na base :/"

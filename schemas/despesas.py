@@ -11,10 +11,10 @@ class DespesaSchema(BaseModel):
 
 class DespesaBuscaSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
-        feita apenas com base na descrição da despesa.
+        feita com base na descrição ou do id da despesa.
     """
-    descricao: str = "Compra no Shopping"
-
+    id: Optional[int] = None
+    descricao: Optional[str] = None
 
 class ListagemDespesaSchema(BaseModel):
     """ Define como uma listagem de despesas será retornada.
@@ -29,6 +29,7 @@ def apresenta_despesas(despesas: List[Despesa]):
     result = []
     for despesa in despesas:
         result.append({
+            "id": despesa.id,
             "descricao": despesa.descricao,
             "valor": despesa.valor,
         })
@@ -51,7 +52,8 @@ class DespesaDelSchema(BaseModel):
         de remoção.
     """
     message: str
-    descricao: str
+    descrição: Optional[str] = None
+    id: Optional[int] = None
 
 class DespesaViewSchema(BaseModel):
     """ Define como uma despesa será retornado: despesa + categoria.
