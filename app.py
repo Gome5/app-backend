@@ -3,13 +3,14 @@ from flask import redirect
 from urllib.parse import unquote
 
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from model import Session, Receita, Despesa
 from logger import logger
 from schemas import *
 from flask_cors import CORS
 
-info = Info(title="Minha API", version="1.0.0")
+info = Info(title="API controle de gastos", version="1.0.0")
 app = OpenAPI(__name__, info=info)
 CORS(app)
 
@@ -17,7 +18,6 @@ CORS(app)
 home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
 receita_tag = Tag(name="Receita", description="Adição, visualização e remoção de receitas à base")
 despesa_tag = Tag(name="Despesa", description="Adição, visualização e remoção de despesas à base")
-categoria_tag = Tag(name="Categoria", description="Adição, visualização e remoção de categorias à base")
 
 @app.get('/', tags=[home_tag])
 def home():
@@ -30,7 +30,7 @@ def home():
 def add_despesa(form: DespesaSchema):
     """Adiciona uma nova Despesa à base de dados
 
-    Retorna uma representação das despesas e categorias associadas.
+    Retorna uma representação das despesas.
     """
     despesa = Despesa(
         descricao=form.descricao,
@@ -123,7 +123,7 @@ def del_despesa(query: DespesaBuscaSchema):
     despesa_descricao = unquote(unquote(query.descricao)) if query.descricao else None
     despesa_id = query.id
     print(despesa_descricao)
-    logger.debug(f"Deletando dados sobre produto #{despesa_descricao}")
+    logger.debug(f"Deletando dados sobre despesa #{despesa_descricao}")
     # criando conexão com a base
     session = Session()
     # fazendo a remoção
@@ -148,7 +148,7 @@ def del_despesa(query: DespesaBuscaSchema):
         return {"message": error_msg}, 404
 
 @app.post('/receita', tags=[receita_tag],
-          responses={})
+          responses={"200": ReceitaViewSchema, "409": ErrorSchema, "400": ErrorSchema})
 def add_receita(form: ReceitaSchema):
     """Adiciona uma nova Receita à base de dados
 
@@ -156,7 +156,8 @@ def add_receita(form: ReceitaSchema):
     """
     receita = Receita(
         descricao=form.descricao,
-        valor=form.valor
+        valor=form.valor,
+        data_entrada=datetime.strptime(form.data, "%Y-%m-%d") if form.data else None
     )
     try:
         # criando conexão com a base
@@ -176,7 +177,7 @@ def add_receita(form: ReceitaSchema):
         return {"mesage": error_msg}, 400
     
 @app.get('/receita', tags=[receita_tag],
-          responses={})
+          responses={"200": ReceitaViewSchema, "404": ErrorSchema})
 def get_receitas():
     """Faz a busca por todas as receitas cadastradas
 
@@ -198,51 +199,40 @@ def get_receitas():
         return apresenta_receitas(receitas), 200
     
 @app.delete('/receita', tags=[receita_tag],
-          responses={})
+          responses={"200": ReceitaDelSchema, "404": ErrorSchema})
 def del_receita(query: ReceitaBuscaSchema):
-    """Deleta uma receita a partir da descrição informada
+    """Deleta uma receita a partir da descrição ou do id informado
 
     Retorna uma mensagem de confirmação da remoção.
     """
-    receita_descricao = unquote(unquote(query.descricao))
+    if not query.descricao and not query.id:
+        error_msg = "É necessário informar ao menos um parâmetro de busca :/"
+        logger.warning(f"Erro ao deletar receita, {error_msg}")
+        return {"message": error_msg}, 400
+    receita_descricao = unquote(unquote(query.descricao)) if query.descricao else None
+    receita_id = query.id
     print(receita_descricao)
-    logger.debug(f"Deletando dados sobre a receita #{receita_descricao}")
+    logger.debug(f"Deletando dados sobre receita #{receita_descricao}")
     # criando conexão com a base
     session = Session()
     # fazendo a remoção
-    count = session.query(Receita).filter(Receita.descricao == receita_descricao).delete()
+    if receita_id is not None:
+        count = session.query(Receita).filter(Receita.id == receita_id).delete()
+    elif receita_descricao:
+        count = session.query(Receita).filter(Receita.descricao == receita_descricao).delete()
     session.commit()
 
     if count:
         # retorna a representação da mensagem de confirmação
-        logger.debug(f"Deletada receita #{receita_descricao}")
-        return {"message": "Receita removida", "id": receita_descricao}
+        if receita_id is not None:
+            logger.debug(f"Deletado receita #{receita_id}")
+            return {"message": "Receita removida", "id": receita_id}
+        if receita_descricao is not None and receita_id is None:
+            logger.debug(f"Deletado receita #{receita_descricao}")
+            return {"message": "Receita removida", "descricao": receita_descricao}
     else:
         # se a receita não foi encontrada
         error_msg = "Receita não encontrada na base :/"
         logger.warning(f"Erro ao deletar receita #'{receita_descricao}', {error_msg}")
         return {"message": error_msg}, 404
 
-@app.post('/categoria', tags=[categoria_tag],
-          responses={})
-def add_categoria():
-    """Adiciona de uma nova categoria à um produtos cadastrado na base identificado pelo id
-
-    Retorna uma representação dos produtos e comentários associados.
-    """
-
-@app.get('/categoria', tags=[categoria_tag],
-          responses={})
-def get_categorias():
-    """Faz a busca por todos os Produto cadastrados
-
-    Retorna uma representação da listagem de produtos.
-    """
-
-@app.delete('/categoria', tags=[categoria_tag],
-          responses={})
-def delete_categoria():
-    """Deleta um Produto a partir do nome de produto informado
-
-    Retorna uma mensagem de confirmação da remoção.
-    """

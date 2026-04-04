@@ -32,6 +32,7 @@ def apresenta_despesas(despesas: List[Despesa]):
             "id": despesa.id,
             "descricao": despesa.descricao,
             "valor": despesa.valor,
+            "data_entrada": despesa.data_entrada.strftime("%d/%m/%Y")
         })
 
     return {"despesas": result}
@@ -56,7 +57,7 @@ class DespesaDelSchema(BaseModel):
     id: Optional[int] = None
 
 class DespesaViewSchema(BaseModel):
-    """ Define como uma despesa será retornado: despesa + categoria.
+    """ Define como uma despesa será retornado: despesa.
     """
     id: int = 1
     descricao: str = "Compra no Shopping"
