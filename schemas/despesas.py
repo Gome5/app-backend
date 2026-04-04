@@ -11,10 +11,10 @@ class DespesaSchema(BaseModel):
 
 class DespesaBuscaSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
-        feita apenas com base no nome do produto.
+        feita com base na descrição ou do id da despesa.
     """
-    descricao: str = "Teste"
-
+    id: Optional[int] = None
+    descricao: Optional[str] = None
 
 class ListagemDespesaSchema(BaseModel):
     """ Define como uma listagem de despesas será retornada.
@@ -29,28 +29,36 @@ def apresenta_despesas(despesas: List[Despesa]):
     result = []
     for despesa in despesas:
         result.append({
+            "id": despesa.id,
             "descricao": despesa.descricao,
             "valor": despesa.valor,
+            "data_entrada": despesa.data_entrada.strftime("%d/%m/%Y")
         })
 
     return {"despesas": result}
 
-class ProdutoDelSchema(BaseModel):
+
+def apresenta_despesa(despesa: Despesa):
+    """ Retorna uma representação da despesa seguindo o schema definido em
+        DespesaViewSchema.
+    """
+    return {
+        "id": despesa.id,
+        "descricao": despesa.descricao,
+        "valor": despesa.valor,
+    }
+
+class DespesaDelSchema(BaseModel):
     """ Define como deve ser a estrutura do dado retornado após uma requisição
         de remoção.
     """
-    mesage: str
-    nome: str
+    message: str
+    descrição: Optional[str] = None
+    id: Optional[int] = None
 
-def apresenta_produto(produto: Produto):
-    """ Retorna uma representação do produto seguindo o schema definido em
-        ProdutoViewSchema.
+class DespesaViewSchema(BaseModel):
+    """ Define como uma despesa será retornado: despesa.
     """
-    return {
-        "id": produto.id,
-        "nome": produto.nome,
-        "quantidade": produto.quantidade,
-        "valor": produto.valor,
-        "total_cometarios": len(produto.comentarios),
-        "comentarios": [{"texto": c.texto} for c in produto.comentarios]
-    }
+    id: int = 1
+    descricao: str = "Compra no Shopping"
+    valor: float = 125.50
