@@ -34,7 +34,8 @@ def add_despesa(form: DespesaSchema):
     """
     despesa = Despesa(
         descricao=form.descricao,
-        valor=form.valor
+        valor=form.valor,
+        data_entrada=datetime.strptime(form.data, "%Y-%m-%d") if form.data else None
     )
     try:
         # criando conexão com a base
@@ -108,7 +109,6 @@ def get_despesa(query: DespesaBuscaSchema):
         logger.warning(f"Erro ao buscar despesa #'{despesa_descricao}', {error_msg}")
         return {"message": error_msg}, 404
     
-
 @app.delete('/despesa', tags=[despesa_tag],
           responses={"200": DespesaDelSchema, "404": ErrorSchema})
 def del_despesa(query: DespesaBuscaSchema):

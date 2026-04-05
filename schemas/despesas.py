@@ -7,6 +7,7 @@ class DespesaSchema(BaseModel):
     """
     descricao: str = "Compra no Shopping"
     valor: float = 259.50
+    data: Optional[str] = None
 
 
 class DespesaBuscaSchema(BaseModel):
@@ -62,3 +63,4 @@ class DespesaViewSchema(BaseModel):
     id: int = 1
     descricao: str = "Compra no Shopping"
     valor: float = 125.50
+    data_entrada: Optional[str] = None
